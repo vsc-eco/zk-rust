@@ -93,4 +93,4 @@ SP1_PROVER=network SP1_PRIVATE_KEY=... cargo run --release --bin evm
 
 ## Debugging Note
 
-If you are running this on MacOS M1 aarch64, don't use `zsh` as your shell. Use `bash` instead. `zsh` throws unintelligible errors that will make you consider switching careers.
+If you are running this on MacOS M1 aarch64, don't use `zsh` as your shell. Use `bash` instead; `zsh` throws unintelligible errors.
