@@ -3,6 +3,23 @@
 This is a template for creating an end-to-end [SP1](https://github.com/succinctlabs/sp1) project
 that can generate a proof of any RISC-V program.
 
+## Short Hands
+
+PROVE: 
+
+```sh
+cd script
+cargo run --release -- --prove
+```
+
+JUST EXEC:
+
+```sh
+cd script
+cargo run --release -- --execute
+```
+
+
 ## Requirements
 
 - [Rust](https://rustup.rs/)

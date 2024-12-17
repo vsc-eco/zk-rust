@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "lib",
+    "lib2",
     "program",
     "script",
 ]

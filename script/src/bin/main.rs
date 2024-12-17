@@ -82,6 +82,8 @@ fn main() {
             .run()
             .expect("failed to generate proof");
 
+        println!("Proof System: {:?}", proof);
+
         println!("Successfully generated proof!");
 
         // Verify the proof.
