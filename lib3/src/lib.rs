@@ -59,21 +59,14 @@ pub fn generate_proof_for_solidity(data: &[&str], index: usize) -> MerkleProofSt
 }
 
 /// Verify a Merkle proof.
-///
 /// # Arguments
 /// * `proof_struct` - A Solidity-compatible proof structure.
-/// * `data` - The leaf data as a string.
 /// * `index` - The index of the leaf.
 /// * `total_leaves` - Total number of leaves in the tree.
 ///
 /// # Returns
 /// `true` if the proof is valid, `false` otherwise.
-pub fn verify_proof(
-    proof_struct: &MerkleProofStruct,
-    _data: &str, // We will no longer use `data` for recomputing the leaf
-    index: usize,
-    total_leaves: usize,
-) -> bool {
+pub fn verify_proof(proof_struct: &MerkleProofStruct, index: usize, total_leaves: usize) -> bool {
     let proof_hashes: Vec<[u8; 32]> = proof_struct.proof.iter().map(|hash| hash.0).collect();
     let proof = MerkleProof::<RsSha256>::new(proof_hashes);
 
@@ -119,7 +112,7 @@ mod tests {
         );
 
         // Verify proof
-        let is_valid = verify_proof(&proof_struct, data[index], index, data.len());
+        let is_valid = verify_proof(&proof_struct, index, data.len());
         assert!(is_valid, "Proof should be valid");
     }
 
@@ -135,7 +128,7 @@ mod tests {
         proof_struct.leaf = hash_input(b"fake data 123 123").into();
 
         // Verify tampered proof
-        let is_valid = verify_proof(&proof_struct, data[index], index, data.len());
+        let is_valid = verify_proof(&proof_struct, index, data.len());
         assert!(!is_valid, "Tampered proof should be invalid");
     }
 }
