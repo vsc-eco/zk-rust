@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 alloy-sol-types = { workspace = true }
-sha2 = "0.10"    # For SHA256 hashing
-hex = "0.4"      # For hex encoding
+sha2 = "0.10"
+hex = "0.4"
