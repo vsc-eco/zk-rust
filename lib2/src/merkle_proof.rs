@@ -10,7 +10,7 @@ impl MerkleProof {
         MerkleProof { proof }
     }
 
-    pub fn verify(&self, root: Node<T>) -> Result<bool, Box<dyn std::error::Error>> {
-        Ok(true) // todo: implement
-    }
+    // pub fn verify(&self, root: Node<T>) -> Result<bool, Box<dyn std::error::Error>> {
+    //     Ok(true) // todo: implement
+    // }
 }
