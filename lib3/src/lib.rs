@@ -99,7 +99,6 @@ mod tests {
 
         // Generate Merkle proof
         let proof_struct = generate_proof_for_solidity(&data, index);
-
         println!("Merkle Root: {:?}", hex::encode(proof_struct.root));
         println!("Leaf: {:?}", hex::encode(proof_struct.leaf));
         println!(
