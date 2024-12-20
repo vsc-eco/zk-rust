@@ -44,7 +44,7 @@ pub fn generate_proof_for_solidity(data: &[&str], index: usize) -> MerkleProofSt
 
     let tree = MerkleTree::<RsSha256>::from_leaves(&leaves);
     let proof = tree.proof(&[index]);
-    let root = tree.root().expect("Failed to compute Merkle root");
+    let root = tree.root().expect("failed to compute Merkle root");
     let leaf = leaves[index];
 
     MerkleProofStruct {

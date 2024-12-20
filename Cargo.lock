@@ -1692,6 +1692,7 @@ version = "0.1.0"
 dependencies = [
  "alloy-sol-types",
  "fibonacci-lib",
+ "merkle-tree-lib",
  "sp1-zkvm",
 ]
 
