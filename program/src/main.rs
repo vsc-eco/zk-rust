@@ -1,31 +1,24 @@
-//! A simple program that takes a number `n` as input, and writes the `n-1`th and `n`th fibonacci
-//! number as an output.
+#![no_main] // required for zkVM programs as it "wraps" the default main?
+sp1_zkvm::entrypoint!(main); // registers `main` as the zkVM entrypoint
 
-// These two lines are necessary for the program to properly compile.
-//
-// Under the hood, we wrap your main function with some extra code so that it behaves properly
-// inside the zkVM.
-#![no_main]
-sp1_zkvm::entrypoint!(main);
+use merkle_tree_lib::generate_proof_for_solidity;
+use sp1_zkvm::io; // io handling for zkVM
 
-use alloy_sol_types::SolType;
-// use fibonacci_lib::{fibonacci, PublicValuesStruct};
-use merkle_tree_lib::{generate_proof_for_solidity, MerkleProofStruct};
-
+/// zkVM main func for Merkle tree proofs
 pub fn main() {
-    // Step 1: Read inputs from zkVM
-    let data: Vec<String> = sp1_zkvm::io::read(); // Read list of strings as input
-    let index: usize = sp1_zkvm::io::read();     // Read the index of the leaf
+    // reads inputs from the zkVM prover
+    let data = io::read::<Vec<String>>(); // read a list of data strings
+    let index = io::read::<usize>(); // read the index for which proof is required
 
-    // Step 2: Prepare data as slices for `generate_proof_for_solidity`
+    // convert input data into references for processing
     let data_refs: Vec<&str> = data.iter().map(String::as_str).collect();
 
-    // Step 3: Generate the Merkle proof using the existing function
-    let proof_struct = generate_proof_for_solidity(&data_refs, index);
+    // gen the Merkle proof using the library function (lib3 for now, as I'm transferring it over from lib)
+    let proof = generate_proof_for_solidity(&data_refs, index);
 
-    // Step 4: Encode the proof structure
-    let encoded_proof = MerkleProofStruct::abi_encode(&proof_struct);
+    // ABI encode the proof for Solidity compatibility
+    let bytes = bincode::serialize(&proof).expect("failed to serialize proof"); // todo: handle gracefully
 
-    // Step 5: Commit the encoded proof to zkVM
-    sp1_zkvm::io::commit_slice(&encoded_proof);
+    // commit the encoded proof to the zkVM
+    io::commit_slice(&bytes);
 }

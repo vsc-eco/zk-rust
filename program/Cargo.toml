@@ -1,10 +1,13 @@
 [package]
 version = "0.1.0"
-name = "fibonacci-program"
+name = "merkle-tree-program"
 edition = "2021"
 
 [dependencies]
 alloy-sol-types = { workspace = true }
 sp1-zkvm = "3.0.0-rc4"
-fibonacci-lib = { path = "../lib" }
 merkle-tree-lib = { path = "../lib3" }
+rs_merkle = "1.4.2"
+sha2 = "0.10"
+hex = "0.4"
+bincode = "1.3.3"

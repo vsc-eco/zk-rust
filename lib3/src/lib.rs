@@ -1,95 +1,67 @@
 use alloy_sol_types::sol;
-use hex;
 use rs_merkle::{algorithms::Sha256 as RsSha256, MerkleProof, MerkleTree};
-use sha2::{Digest, Sha256}; // For hashing inputs
+use sha2::{Digest, Sha256}; // used for hashing algos
 
 sol! {
     struct MerkleProofStruct {
-        bytes32[] proof; // Array of sibling hashes
-        bytes32 leaf;    // Hash of the leaf node
-        bytes32 root;    // Merkle root
+        bytes32[] proof; // array of sibling hashes
+        bytes32 leaf;    // hash(leaf node)
+        bytes32 root;    // markle root
     }
 }
 
-/// Hashes input data using the `Sha256` hashing algorithm.
+/// hash the input data using the sha256 alg
 fn hash_input(data: &[u8]) -> [u8; 32] {
     let mut hasher = Sha256::new();
     hasher.update(data);
     hasher.finalize().into()
 }
 
-/// Compute the Merkle root for a list of data.
-///
-/// # Arguments
-/// * `data` - A vector of string slices.
-///
-/// # Returns
-/// Merkle root as a hex string.
-pub fn compute_merkle_root(data: &[&str]) -> String {
+/// compute the Merkle root for a list of data
+pub fn compute_merkle_root(data: &[&str]) -> [u8; 32] {
     let leaves: Vec<[u8; 32]> = data.iter().map(|d| hash_input(d.as_bytes())).collect();
     let tree = MerkleTree::<RsSha256>::from_leaves(&leaves);
-    hex::encode(tree.root().expect("Root computation failed"))
+    tree.root().expect("Root computation failed") // todo: handle gracefully
 }
 
-/// Generate a Merkle proof for a specific index in a list of data.
-///
-/// # Arguments
-/// * `data` - A vector of string slices.
-/// * `index` - The index of the leaf.
-///
-/// # Returns
-/// A Solidity-compatible struct with proof, leaf, and root.
-pub fn generate_proof_for_solidity(data: &[&str], index: usize) -> MerkleProofStruct {
+/// gen a Merkle proof for a specific index
+pub fn generate_proof_for_solidity(
+    data: &[&str],
+    index: usize,
+) -> (Vec<[u8; 32]>, [u8; 32], [u8; 32]) {
     let leaves: Vec<[u8; 32]> = data.iter().map(|d| hash_input(d.as_bytes())).collect();
 
     let tree = MerkleTree::<RsSha256>::from_leaves(&leaves);
     let proof = tree.proof(&[index]);
-    let root = tree.root().expect("failed to compute Merkle root");
+    let root = tree.root().expect("Failed to compute Merkle root"); // todo: handle gracefully
     let leaf = leaves[index];
 
-    MerkleProofStruct {
-        proof: proof
-            .proof_hashes()
-            .iter()
-            .map(|hash| (*hash).into()) // Convert the proof hash into the correct format
-            .collect(),
-        leaf: leaf.into(), // Convert leaf into the required format
-        root: root.into(), // Convert root into the required format
-    }
+    (proof.proof_hashes().to_vec(), leaf, root)
 }
 
-/// Verify a Merkle proof.
-/// # Arguments
-/// * `proof_struct` - A Solidity-compatible proof structure.
-/// * `index` - The index of the leaf.
-/// * `total_leaves` - Total number of leaves in the tree.
-///
-/// # Returns
-/// `true` if the proof is valid, `false` otherwise.
-pub fn verify_proof(proof_struct: &MerkleProofStruct, index: usize, total_leaves: usize) -> bool {
-    let proof_hashes: Vec<[u8; 32]> = proof_struct.proof.iter().map(|hash| hash.0).collect();
-    let proof = MerkleProof::<RsSha256>::new(proof_hashes);
+/// verifies a Merkle proof
+pub fn verify_proof(proof: &[Vec<[u8; 32]>; 3], index: usize, total_leaves: usize) -> bool {
+    let proof_hashes = &proof[0];
+    let root = proof[2][0];
+    let leaf = proof[1][0];
 
-    // Use the `proof_struct.leaf` directly instead of recomputing
-    proof.verify(
-        proof_struct.root.0,
-        &[index],
-        &[proof_struct.leaf.0],
-        total_leaves,
-    )
+    let proof = MerkleProof::<RsSha256>::new(proof_hashes.clone());
+    proof.verify(root, &[index], &[leaf], total_leaves)
 }
 
+// module-zoned unit tests
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hex;
 
     #[test]
     fn test_merkle_root_computation() {
         let data = vec!["a", "b", "c", "d"];
         let root = compute_merkle_root(&data);
-        println!("Computed Merkle Root: {}", root);
+        println!("computed Merkle Root: {:?}", hex::encode(root));
 
-        assert_ne!(root, hex::encode([0u8; 32]), "Root should not be zero");
+        assert_ne!(root, [0u8; 32], "root shouldn't be zero");
     }
 
     #[test]
@@ -97,22 +69,19 @@ mod tests {
         let data = vec!["a", "b", "c", "d"];
         let index = 2;
 
-        // Generate Merkle proof
-        let proof_struct = generate_proof_for_solidity(&data, index);
-        println!("Merkle Root: {:?}", hex::encode(proof_struct.root));
-        println!("Leaf: {:?}", hex::encode(proof_struct.leaf));
+        let (proof_hashes, leaf, root) = generate_proof_for_solidity(&data, index);
+
+        println!("Merkle root: {:?}", hex::encode(root));
+        println!("leaf: {:?}", hex::encode(leaf));
         println!(
-            "Proof Hashes: {:?}",
-            proof_struct
-                .proof
-                .iter()
-                .map(hex::encode)
-                .collect::<Vec<_>>()
+            "proof hashes: {:?}",
+            proof_hashes.iter().map(hex::encode).collect::<Vec<_>>()
         );
 
-        // Verify proof
-        let is_valid = verify_proof(&proof_struct, index, data.len());
-        assert!(is_valid, "Proof should be valid");
+        let proof = [proof_hashes.clone(), vec![leaf], vec![root]];
+
+        let is_valid = verify_proof(&proof, index, data.len());
+        assert!(is_valid, "proof should be valid");
     }
 
     #[test]
@@ -120,14 +89,13 @@ mod tests {
         let data = vec!["a", "b", "c", "d"];
         let index = 2;
 
-        // Generate valid proof
-        let mut proof_struct = generate_proof_for_solidity(&data, index);
+        let (proof_hashes, _, root) = generate_proof_for_solidity(&data, index);
 
-        // Tamper with the proof
-        proof_struct.leaf = hash_input(b"fake data 123 123").into();
+        // tampering!this should make the proof invalid
+        let tampered_leaf = hash_input(b"fake data 123 123 hi");
 
-        // Verify tampered proof
-        let is_valid = verify_proof(&proof_struct, index, data.len());
-        assert!(!is_valid, "Tampered proof should be invalid");
+        let proof = [proof_hashes.clone(), vec![tampered_leaf], vec![root]];
+        let is_valid = verify_proof(&proof, index, data.len());
+        assert!(!is_valid, "tampted proof should be invalid!");
     }
 }

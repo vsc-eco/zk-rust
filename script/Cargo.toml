@@ -1,11 +1,11 @@
 [package]
 version = "0.1.0"
-name = "fibonacci-script"
+name = "merkle-tree-script"
 edition = "2021"
-default-run = "fibonacci"
+default-run = "merkle-tree"
 
 [[bin]]
-name = "fibonacci"
+name = "merkle-tree"
 path = "src/bin/main.rs"
 
 [[bin]]
@@ -20,7 +20,8 @@ clap = { version = "4.0", features = ["derive", "env"] }
 tracing = "0.1.40"
 hex = "0.4.3"
 alloy-sol-types = { workspace = true }
-fibonacci-lib = { path = "../lib" }
+# fibonacci-lib = { path = "../lib" }
+merkle-tree-lib = { path = "../lib3" }
 
 [build-dependencies]
 sp1-helper = "3.0.0"
